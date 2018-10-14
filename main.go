@@ -100,6 +100,7 @@ func main() {
 
 		go func() {
 			err = runServer(nConn, config)
+			defer nConn.Close()
 			if err != nil {
 				log.Print("failed runServer: ", err)
 			}
