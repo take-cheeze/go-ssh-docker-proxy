@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
+	"os/user"
 	"path/filepath"
 
 	"golang.org/x/crypto/ssh"
@@ -17,7 +17,11 @@ var (
 )
 
 func main() {
-	home := os.Getenv("HOME")
+	user, err := user.Current()
+	if err != nil {
+		log.Fatal("Failed gatting user information: ", err)
+	}
+	home := user.HomeDir
 
 	authorizedKeysMap := map[string]bool{}
 
