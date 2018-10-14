@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,8 @@ import (
 
 var (
 	dockerClient *docker.Client
+	host = flag.String("host", "0.0.0.0:2022", "Host to bind SSH server")
+	authKeys = flag.String("authorized_keys", "", "Authorized Keys file path")
 )
 
 func main() {
@@ -28,7 +31,11 @@ func main() {
 	// Public key authentication is done by comparing
 	// the public key of a received connection
 	// with the entries in the authorized_keys file.
-	authorizedKeysBytes, err := ioutil.ReadFile(filepath.Join(home, ".ssh", "authorized_keys"))
+	keyFile := *authKeys
+	if len(keyFile) == 0 {
+		keyFile = filepath.Join(home, ".ssh", "authorized_keys")
+	}
+	authorizedKeysBytes, err := ioutil.ReadFile(keyFile)
 	if err != nil {
 		log.Fatalf("Failed to load authorized_keys, err: %v", err)
 	}
@@ -74,7 +81,7 @@ func main() {
 
 	// Once a ServerConfig has been configured, connections can be
 	// accepted.
-	listener, err := net.Listen("tcp", "0.0.0.0:2022")
+	listener, err := net.Listen("tcp", *host)
 	if err != nil {
 		log.Fatal("failed to listen for connection: ", err)
 	}
@@ -93,6 +100,7 @@ func main() {
 
 		go func() {
 			err = runServer(nConn, config)
+			defer nConn.Close()
 			if err != nil {
 				log.Print("failed runServer: ", err)
 			}
